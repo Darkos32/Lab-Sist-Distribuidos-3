@@ -1,10 +1,13 @@
 from socket import *
-
+import select
+import sys
 # Define a porta e o ip
 HOST = ''
 PORT = 5000
-
-#camada de acesso aos dados
+entradas = [sys.stdin]
+fim_imediato = False
+fim = False
+# camada de acesso aos dados
 
 
 def acesso_dados(nome_arquivo):
@@ -33,14 +36,14 @@ def mais_recorrente(dicio):
                 break
     return top5
 
-#substitui os símbolos no intervalo passado por espaço em branco
+# substitui os símbolos no intervalo passado por espaço em branco
 
 
 def replace_simbols(conteudo, inicio, fim):
     for i in range(inicio, fim):
         conteudo = conteudo.replace(chr(i), " ")
 
-#elimina simbolos não considerados palavras
+# elimina simbolos não considerados palavras
 
 
 def parse_conteudo(conteudo):
@@ -49,7 +52,7 @@ def parse_conteudo(conteudo):
     conteudo = replace_simbols(conteudo, 91, 97)
 
 
-#Camada de processamento
+# Camada de processamento
 def processamento(nome_arquivo):
     try:
         conteudo = acesso_dados(nome_arquivo)
@@ -61,7 +64,7 @@ def processamento(nome_arquivo):
     dicio = contar(palavras)
     return mais_recorrente(dicio)
 
-#Calcula a quantidade de vezes que uma palavra aparece no arquivo
+# Calcula a quantidade de vezes que uma palavra aparece no arquivo
 
 
 def contar(palavras):
@@ -73,7 +76,7 @@ def contar(palavras):
             dicio[palavra] = 0
     return dicio
 
-#Insere um elemento numa posição e "empurra" os elementos posteriores
+# Insere um elemento numa posição e "empurra" os elementos posteriores
 
 
 def insere(elemento, vetor, pos):
@@ -86,13 +89,33 @@ def insere(elemento, vetor, pos):
     return temp
 
 
-s = socket(AF_INET, SOCK_STREAM)
-s.bind((HOST, PORT))
-s.listen(1)
-while True:
-    (connect, ende) = s.accept()
-    pedido = connect.recv(1024).decode("utf-8")
-    resposta = processamento(str(pedido))
-    print(resposta)
-    connect.send(str.encode(str(resposta)))
-s.close()
+def init_socket():
+    s = socket(AF_INET, SOCK_STREAM)
+    s.bind((HOST, PORT))
+    s.listen(1)
+    return s
+
+
+def main():
+    s = init_socket()
+    while True:
+        (ler, escrever, erro) = select.select(
+            entradas, [], [])  # inicializa o select
+        for entrada in ler:
+            if entrada == sys.stdin:
+                cmd = input()
+                # if cmd == "!":
+                #     fim_imediato = True
+                # elif cmd == "#":
+                #     fim = True
+                print(cmd)
+            elif entrada == s:
+                (connect, ende) = s.accept()
+                pedido = connect.recv(1024).decode("utf-8")
+                resposta = processamento(str(pedido))
+                print(resposta)
+                connect.send(str.encode(str(resposta)))
+        if fim == True:
+            break
+    s.close()
+main()
