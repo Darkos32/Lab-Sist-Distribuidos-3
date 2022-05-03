@@ -24,3 +24,5 @@ def main():
     resposta = eval(s.recv(1024).decode("utf-8"))
     print_top5(resposta)
     s.close()
+
+main()
