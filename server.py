@@ -87,6 +87,8 @@ def insere(elemento, vetor, pos):
             temp.append(vetor[i])
     return temp
 
+# inicializa o socket
+
 
 def init_socket():
     s = socket(AF_INET, SOCK_STREAM)
@@ -94,13 +96,15 @@ def init_socket():
     s.listen(1)
     return s
 
+# executa o processamento do pedido de um cliente
+
 
 def handle_request(connect, ende):
+    # recebe os argumentos do cliente
     pedido = connect.recv(1024).decode("utf-8")
-    resposta = processamento(str(pedido))
+    resposta = processamento(str(pedido))  # executa o processamento do pedido
     print(resposta)
-    connect.send(str.encode(str(resposta)))
-
+    connect.send(str.encode(str(resposta)))  # envia a resposta para o cliente
 
 def main():
     s = init_socket()
@@ -110,15 +114,17 @@ def main():
     while True:
         (ler, escrever, erro) = select.select(
             entradas, [], [])  # inicializa o select
-        for entrada in ler:
-            if entrada == sys.stdin:
+        for entrada in ler:  # Verifica de qual fonte veio o input
+            if entrada == sys.stdin:  # se o input veio do próprio terminal do servidor executa o comando
                 cmd = input()
-                if cmd == "!":
+                if cmd == "!":  # avisa que o servidor deve terminar assim que os processos terminarem
                     fim = True
-            elif entrada == s:
+            elif entrada == s:  # se o input é um pedido de um cliente, executa o processamento
+                # cria um processo para lidar com o processo do cliente
                 cliente = multiprocessing.Process(
                     target=handle_request, args=s.accept())
                 cliente.start()
+                # adiciona o cliente na lista de processos em andamento
                 clientes.append(cliente)
 
         if fim == True:
