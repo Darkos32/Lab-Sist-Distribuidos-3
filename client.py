@@ -5,9 +5,9 @@ PORT = 5000
 
 #Inicializa o socket
 def init_socket():
-    socket = socket(AF_INET, SOCK_STREAM)
-    socket.connect((HOST, PORT))
-    return socket
+    s = socket(AF_INET, SOCK_STREAM)
+    s.connect((HOST, PORT))
+    return s
 
 #Imprime a resposta do servidor
 def print_top5(resposta):
