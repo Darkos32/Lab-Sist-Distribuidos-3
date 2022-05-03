@@ -1,12 +1,11 @@
 from socket import *
 import select
 import sys
+import multiprocessing
 # Define a porta e o ip
 HOST = ''
 PORT = 5000
-entradas = [sys.stdin]
-fim_imediato = False
-fim = False
+
 # camada de acesso aos dados
 
 
@@ -96,26 +95,38 @@ def init_socket():
     return s
 
 
+def handle_request(connect, ende):
+    pedido = connect.recv(1024).decode("utf-8")
+    resposta = processamento(str(pedido))
+    print(resposta)
+    connect.send(str.encode(str(resposta)))
+
+
 def main():
     s = init_socket()
+    entradas = [sys.stdin, s]
+    clientes = []
+    fim = False
     while True:
         (ler, escrever, erro) = select.select(
             entradas, [], [])  # inicializa o select
         for entrada in ler:
             if entrada == sys.stdin:
                 cmd = input()
-                # if cmd == "!":
-                #     fim_imediato = True
-                # elif cmd == "#":
-                #     fim = True
-                print(cmd)
+                if cmd == "!":
+                    fim = True
             elif entrada == s:
-                (connect, ende) = s.accept()
-                pedido = connect.recv(1024).decode("utf-8")
-                resposta = processamento(str(pedido))
-                print(resposta)
-                connect.send(str.encode(str(resposta)))
+                cliente = multiprocessing.Process(
+                    target=handle_request, args=s.accept())
+                cliente.start()
+                clientes.append(cliente)
+
         if fim == True:
+            for cliente in clientes:
+                cliente.join()
             break
     s.close()
+    sys.exit()
+
+
 main()
